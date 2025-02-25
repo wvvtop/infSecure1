@@ -1,3 +1,23 @@
 {% extends 'main/layoutMain.html' %}
 
-{% block title %}Авторизация - Автошкола Онлайн{% endblock %}
+{% block title %}Вход - Автошкола Онлайн{% endblock %}
+
+{% block content %}
+<h1 class="text-center">🔐 Вход</h1>
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="username" class="form-label">Имя пользователя</label>
+                <input type="text" name="username" id="username" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Пароль</label>
+                <input type="password" name="password" id="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-dark w-100">Войти</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
