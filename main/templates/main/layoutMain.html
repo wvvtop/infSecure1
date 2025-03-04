@@ -12,6 +12,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
+            <img src="{% static 'main/img/logo.jpg' %}" alt="Логотиип" height="50" width="50">
             <a class="navbar-brand" href="/">Автошкола Онлайн</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -24,9 +25,20 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'contacts' %}">📞 Контакты</a></li>
                 </ul>
 
+
+
                 <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">🔐 Вход</a></li>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'profile' %}">👤 Профиль</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">🔐 Вход</a>
+                        </li>
+                    {% endif %}
                 </ul>
+
             </div>
         </div>
     </nav>
@@ -37,7 +49,7 @@
     </div>
 
     <footer class="bg-dark text-white text-center py-3 mt-5">
-        © 2025 Автошкола Онлайн. Все права защищены.
+        © 2025 Автошкола Онлайн. Все права (водительские) защищены.
     </footer>
 </body>
 </html>
