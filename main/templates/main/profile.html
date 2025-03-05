@@ -1,0 +1,24 @@
+{% extends 'main/layoutMain.html' %}
+
+{% block title %}Профиль - Автошкола Онлайн{% endblock %}
+
+{% block content %}
+<h1 class="text-center">👤 Профиль</h1>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Данные пользователя</h5>
+                <p class="card-text"><strong>Имя пользователя:</strong> {{ user.username }}</p>
+                <p class="card-text"><strong>Имя:</strong> {{ user.profile.first_name }}</p>
+                <p class="card-text"><strong>Фамилия:</strong> {{ user.profile.last_name }}</p>
+                <p class="card-text"><strong>Номер телефона:</strong> {{ user.profile.phone_number }}</p>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-dark">Выйти</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
