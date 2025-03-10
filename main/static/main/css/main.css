@@ -58,12 +58,14 @@ main {
 }
 
 footer {
-    background: #333;
-    color: #fff;
-    text-align: center;
-    padding: 10px 0;
-    position: fixed;
-    width: 100%;
-    bottom: 0;
+    background: #333; /* Цвет фона */
+    color: #fff; /* Цвет текста */
+    text-align: center; /* Выравнивание текста по центру */
+    padding: 50px; /* Уменьшенный отступ внутри футера */
+    position: fixed; /* Фиксированное положение */
+    width: 100%; /* Ширина на всю страницу */
+    bottom: 0; /* Прижат к низу */
+    font-size: 12px; /* Размер шрифта (можно уменьшить) */
+    line-height: 1.2; /* Межстрочный интервал */
 }
 

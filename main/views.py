@@ -6,6 +6,10 @@ from django.contrib.auth.forms import AuthenticationForm
 # from .forms import CustomUserCreationForm
 from .forms import CustomUserCreationForm
 from .models import UserProfile
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import AuthenticationForm
+from django.shortcuts import render, redirect
+from django.contrib import messages
 
 def home(request):
     return render(request, "main/home.html")
@@ -22,12 +26,14 @@ def contacts(request):
 def login_page(request):
     return render(request, "main/login.html")
 
-def register(request):
-    return render(request, "main/register.html")
+# def register(request):
+#     return render(request, "main/register.html")
 
 @login_required
 def profile_view(request):
     return render(request, 'main/profile.html')
+
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -39,9 +45,14 @@ def login_view(request):
             if user is not None:
                 login(request, user)
                 return redirect('home')  # Замените 'home' на имя вашего URL
+            else:
+                messages.error(request, "Неправильная почта или пароль")
+        else:
+            messages.error(request, "Неправильная почта или пароль")
     else:
         form = AuthenticationForm()
     return render(request, 'main/login.html', {'form': form})
+
 
 
 def register_view(request):

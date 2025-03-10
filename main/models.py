@@ -4,7 +4,7 @@ from django.core.validators import EmailValidator
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, password=None):
-        if not username:
+        if not username:    
             raise ValueError('У пользователя должен быть email!')
         username = self.normalize_email(username)  # Приводим email к нижнему регистру
         user = self.model(username=username)

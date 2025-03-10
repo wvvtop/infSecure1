@@ -18,6 +18,13 @@
             </div>
             <button type="submit" class="btn btn-dark w-100">Войти</button>
         </form>
+        <!-- Сообщения об ошибках -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-danger mt-3">{{ message }}</div>  <!-- Добавили отступ сверху -->
+            {% endfor %}
+        {% endif %}
+
         <div class="mt-3 text-center">
             <p>Нет аккаунта? <a href="{% url 'register' %}">Зарегистрируйтесь</a></p>
         </div>
