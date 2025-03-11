@@ -33,6 +33,8 @@ def login_page(request):
 def profile_view(request):
     return render(request, 'main/profile.html')
 
+def materials(request):
+    return render(request, 'main/ticketsPDD.html')
 
 
 def login_view(request):
