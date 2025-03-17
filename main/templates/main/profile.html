@@ -13,10 +13,16 @@
                 <p class="card-text"><strong>Имя:</strong> {{ user.profile.first_name }}</p>
                 <p class="card-text"><strong>Фамилия:</strong> {{ user.profile.last_name }}</p>
                 <p class="card-text"><strong>Номер телефона:</strong> {{ user.profile.phone_number }}</p>
-                <form method="post" action="{% url 'logout' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-dark">Выйти</button>
-                </form>
+                <div class="d-flex justify-content-between mt-3">
+                    <!-- Кнопка "Редактировать профиль" (слева) -->
+                    <a href="{% url 'edit_profile' %}" class="btn btn-dark">Редактировать профиль</a>
+
+                    <!-- Форма для выхода (справа) -->
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Выйти</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

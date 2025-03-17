@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 
+
+host = "http://localhost:8000"
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,7 +27,7 @@ SECRET_KEY = 'django-insecure-)b*sav!dbpr0=zvz5r#52_n6@#srj_wmzv%zglflixg+^vtran
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.64.51", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["192.168.138.51", "127.0.0.1", "localhost"]
 
 # Application definition
 
@@ -134,4 +137,18 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.yandex.ru'  # SMTP-сервер Yandex
+EMAIL_PORT = 465  # Порт для SSL
+EMAIL_USE_SSL = True  # Использовать SSL
+# EMAIL_PORT = 587  # Порт для TLS
+# EMAIL_USE_TLS = True  # Использовать TLS (если используете порт 587)
+
+EMAIL_HOST_USER = 'auto.school2025@yandex.ru'  # Ваш полный email-адрес
+EMAIL_HOST_PASSWORD = 'tkujmyardvmjbkmo'  # Пароль от Yandex или пароль приложения
+
+DEFAULT_FROM_EMAIL = 'auto.school2025@yandex.ru'  # Email, который будет указан как отправитель
+
+BASE_URL = host
 

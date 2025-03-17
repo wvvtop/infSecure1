@@ -1,3 +1,5 @@
+import uuid
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import EmailValidator
@@ -53,3 +55,26 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+
+class EmailVerification(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    code = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+
+class PendingUser(models.Model):
+    email = models.EmailField(unique=True)
+    password = models.CharField(max_length=128)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=15)
+    verification_code = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.email
