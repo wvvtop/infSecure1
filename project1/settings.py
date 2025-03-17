@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import json
 from pathlib import Path
 
 
@@ -145,10 +145,13 @@ EMAIL_USE_SSL = True  # Использовать SSL
 # EMAIL_PORT = 587  # Порт для TLS
 # EMAIL_USE_TLS = True  # Использовать TLS (если используете порт 587)
 
-EMAIL_HOST_USER = 'auto.school2025@yandex.ru'  # Ваш полный email-адрес
-EMAIL_HOST_PASSWORD = 'tkujmyardvmjbkmo'  # Пароль от Yandex или пароль приложения
+with open('settings.json') as f:
+    templates = json.load(f)
 
-DEFAULT_FROM_EMAIL = 'auto.school2025@yandex.ru'  # Email, который будет указан как отправитель
+EMAIL_HOST_USER = templates.get("email")  # Ваш полный email-адрес
+EMAIL_HOST_PASSWORD = templates.get("passwordEmail")  # Пароль от Yandex или пароль приложения
+
+DEFAULT_FROM_EMAIL = templates.get("email")  # Email, который будет указан как отправитель
 
 BASE_URL = host
 
