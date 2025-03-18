@@ -10,11 +10,11 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
     path('profile/', views.profile_view, name='profile'),
-    path('logout/', LogoutView.as_view(), name='logout'),
+    path('logout/', LogoutView.as_view(next_page='home'), name='logout'),  # После выхода - редирект на главную
     path('materials/', views.materials, name='materials'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
-    path('verify/<uuid:code>/', views.verify_email, name='verify_email'),
-    path('email-sent/', views.email_sent, name='email_sent'),
-    # path("about", views.about, name="about"),
-    # path("more", views.more, name="more")
+
+    # Верификация
+    path('verify/', views.verification_form, name='verification_form'),  # Форма ввода кода
+    path('verify/submit/', views.verify_email, name='verify_email'),  # Обработка кода
 ]

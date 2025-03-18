@@ -4,6 +4,8 @@ from .models import CustomUser, UserProfile
 # forms.py
 from django import forms
 from .models import UserProfile
+from django.core.exceptions import ValidationError
+
 
 class ProfileEditForm(forms.ModelForm):
     class Meta:
@@ -16,6 +18,7 @@ class ProfileEditForm(forms.ModelForm):
         self.fields['last_name'].label = 'Фамилия'
         self.fields['phone_number'].label = 'Номер телефона'
 
+
 class CustomUserCreationForm(UserCreationForm):
     first_name = forms.CharField(max_length=100, required=True)
     last_name = forms.CharField(max_length=100, required=True)
@@ -24,3 +27,9 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = CustomUser
         fields = ('username', 'password1', 'password2', 'first_name', 'last_name', 'phone_number')
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        if CustomUser.objects.filter(username=username).exists():
+            raise ValidationError("Этот email уже зарегистрирован.")
+        return username

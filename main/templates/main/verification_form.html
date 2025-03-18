@@ -1,0 +1,46 @@
+{% extends 'main/layoutMain.html' %}
+
+{% block title %}Введите код подтверждения{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center">Подтверждение регистрации</h1>
+    <form method="post" action="{% url 'verify_email' %}" class="col-md-4 mx-auto">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="code" class="form-label">Введите 5-значный код:</label>
+            <input 
+                type="text" 
+                name="code" 
+                class="form-control" 
+                maxlength="5" 
+                pattern="\d{5}" 
+                title="Введите 5 цифр"
+                required
+            >
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Подтвердить</button>
+
+       {% for message in messages %}
+            {% if message.tags == "error" %}
+                {% if "Срок действия кода истёк" in message|striptags %}
+                    <!-- Если в сообщении есть "Срок действия кода истёк", оборачиваем в ссылку -->
+                    <a href="{% url 'register' %}" class="alert alert-danger mt-3 text-center p-2" style="display: block; text-decoration: none; font-size: 14px;">
+                        {{ message|safe }}
+                    </a>
+                {% else %}
+                    <!-- Для остальных сообщений выводим обычный alert -->
+                    <div class="alert alert-danger mt-3 text-center p-2" style="font-size: 14px;" role="alert">
+                        {{ message|safe }}
+                    </div>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+
+
+
+    </form>
+
+
+</div>
+{% endblock %}

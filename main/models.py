@@ -1,8 +1,10 @@
+import secrets
 import uuid
 from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import EmailValidator
+
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, password=None):
@@ -19,6 +21,7 @@ class CustomUserManager(BaseUserManager):
         user.is_admin = True
         user.save(using=self._db)
         return user
+
 
 class CustomUser(AbstractBaseUser):
     username = models.CharField(
@@ -47,6 +50,7 @@ class CustomUser(AbstractBaseUser):
     def is_staff(self):
         return self.is_admin
 
+
 class UserProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
     first_name = models.CharField(max_length=100)
@@ -57,24 +61,23 @@ class UserProfile(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 
-class EmailVerification(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    code = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField()
-
-    def is_expired(self):
-        return timezone.now() > self.expires_at
-
-
 class PendingUser(models.Model):
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=128)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=15)
-    verification_code = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    verification_code = models.CharField(max_length=5, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.verification_code:
+            while True:
+                code = ''.join(secrets.choice('0123456789') for _ in range(5))
+                if not PendingUser.objects.filter(verification_code=code).exists():
+                    self.verification_code = code
+                    break
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.email

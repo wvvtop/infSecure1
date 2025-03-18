@@ -155,3 +155,4 @@ DEFAULT_FROM_EMAIL = templates.get("email")  # Email, который будет 
 
 BASE_URL = host
 
+BACKGROUND_TASK_RUN_ASYNC = True
