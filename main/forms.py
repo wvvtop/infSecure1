@@ -1,5 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from django.core.validators import RegexValidator
+from .validators import validate_password_complexity
 from .models import CustomUser, UserProfile
 # forms.py
 from django import forms
@@ -22,7 +24,14 @@ class ProfileEditForm(forms.ModelForm):
 class CustomUserCreationForm(UserCreationForm):
     first_name = forms.CharField(max_length=100, required=True)
     last_name = forms.CharField(max_length=100, required=True)
-    phone_number = forms.CharField(max_length=15, required=True)
+    phone_number = forms.CharField(
+        max_length=12,
+        required=True,
+        validators=[RegexValidator(
+            regex=r'^\+7\d{10}$',
+            message="Введите номер в формате +7 (999) 999 9999"
+        )]
+    )
 
     class Meta:
         model = CustomUser
@@ -33,3 +42,8 @@ class CustomUserCreationForm(UserCreationForm):
         if CustomUser.objects.filter(username=username).exists():
             raise ValidationError("Этот email уже зарегистрирован.")
         return username
+
+    def clean_password1(self):
+        password1 = self.cleaned_data.get('password1')
+        validate_password_complexity(password1)  # Применяем кастомный валидатор
+        return password1

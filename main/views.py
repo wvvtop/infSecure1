@@ -1,3 +1,4 @@
+import secrets
 import uuid
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -144,58 +145,74 @@ def register_view(request):
 
 
 def verify_email(request):
-    """Обрабатывает введённый код подтверждения."""
-    email = request.session.get('pending_email')  # Получаем email из сессии
+    email = request.session.get('pending_email')
 
     if not email:
         messages.error(request, "Сессия истекла. Пройдите регистрацию заново.")
-        return redirect('verification_form')
+        return redirect('register')
 
     if request.method == 'POST':
-        code = request.POST.get('code', '').strip()
+        if 'resend' in request.POST:  # Если нажали "Отправить снова"
+            try:
+                pending_user = PendingUser.objects.get(email=email)
 
-        if not code.isdigit() or len(code) != 5:
-            messages.error(request, "Код должен состоять из 5 цифр.")
+                # Генерируем новый код подтверждения
+                pending_user.verification_code = ''.join(secrets.choice('0123456789') for _ in range(5))
+                pending_user.created_at = timezone.now()
+                pending_user.save()
+
+                # Отправляем новый код на почту
+                send_verification_email(pending_user)
+                messages.success(request, "Новый код отправлен на вашу почту.")
+
+            except PendingUser.DoesNotExist:
+                messages.error(request, "Ошибка! Пользователь не найден.")
+                return redirect('register')
+
             return redirect('verification_form')
 
-        try:
-            pending_user = PendingUser.objects.get(email=email, verification_code=code)
+        else:  # Проверка введенного кода
+            code = request.POST.get('code', '').strip()
 
-            # Проверяем срок действия кода (например, 24 часа)
-            expiration_time = pending_user.created_at + timedelta(minutes=60)
-            if timezone.now() > expiration_time:
-                pending_user.delete()
-                messages.error(request, "Срок действия кода истёк, пройдите регистрацию заново.")
+            if not code.isdigit() or len(code) != 5:
+                messages.error(request, "Код должен состоять из 5 цифр.")
                 return redirect('verification_form')
 
-            # Создаём пользователя
-            user = CustomUser.objects.create_user(
-                username=pending_user.email,
-                password=pending_user.password
-            )
+            try:
+                pending_user = PendingUser.objects.get(email=email, verification_code=code)
+                # Проверяем срок действия кода (например, 60 минут)
+                expiration_time = pending_user.created_at + timedelta(minutes=60)
+                if timezone.now() > expiration_time:
+                    pending_user.delete()
+                    messages.error(request, "Срок действия кода истёк, пройдите регистрацию заново.")
+                    return redirect('verification_form')
 
-            # Создаём профиль пользователя
-            UserProfile.objects.create(
-                user=user,
-                first_name=pending_user.first_name,
-                last_name=pending_user.last_name,
-                phone_number=pending_user.phone_number
-            )
+                # Создаём пользователя
+                user = CustomUser.objects.create_user(
+                    username=pending_user.email,
+                    password=pending_user.password
+                )
 
-            # Удаляем временные данные
-            pending_user.delete()
-            del request.session['pending_email']  # Удаляем email из сессии
+                UserProfile.objects.create(
+                    user=user,
+                    first_name=pending_user.first_name,
+                    last_name=pending_user.last_name,
+                    phone_number=pending_user.phone_number
+                )
 
-            # Авторизуем пользователя
-            login(request, user)
+                # Удаляем временные данные
+                pending_user.delete()
+                del request.session['pending_email']
 
-            return redirect('home')
+                login(request, user)
 
-        except PendingUser.DoesNotExist:
-            messages.error(request, "Неверный код подтверждения.")
-            return redirect('verification_form')
+                return redirect('home')
 
-    return redirect('verification_form')
+            except PendingUser.DoesNotExist:
+                messages.error(request, "Неверный код подтверждения.")
+                return redirect('verification_form')
+
+    return render(request, 'main/verification_form.html', {'email': email})
 
 
 def verification_form(request):

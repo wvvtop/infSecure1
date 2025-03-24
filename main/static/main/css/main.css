@@ -1,4 +1,13 @@
-body {
+/*body {*/
+/*    background: #f4f4f4;*/
+/*    margin: 0;*/
+/*    font-family: Arial, sans-serif;*/
+/*}*/
+
+html, body {
+    height: 100%; /* Растягиваем всю страницу */
+    display: flex;
+    flex-direction: column;
     background: #f4f4f4;
     margin: 0;
     font-family: Arial, sans-serif;
@@ -57,15 +66,18 @@ main {
     line-height: 1.6;
 }
 
+.container {
+    flex: 1; /* Растягивается, чтобы футер не "поднимался" */
+}
+
 footer {
     background: #333; /* Цвет фона */
     color: #fff; /* Цвет текста */
     text-align: center; /* Выравнивание текста по центру */
-    padding: 50px; /* Уменьшенный отступ внутри футера */
-    position: fixed; /* Фиксированное положение */
-    width: 100%; /* Ширина на всю страницу */
-    bottom: 0; /* Прижат к низу */
-    font-size: 12px; /* Размер шрифта (можно уменьшить) */
+    padding: 20px; /* Уменьшенный отступ внутри футера */
+    width: 100%; /* Футер занимает всю ширину */
+    position: relative; /* Исправлено: убираем fixed */
+    font-size: 12px; /* Размер шрифта */
     line-height: 1.2; /* Межстрочный интервал */
+    margin-top: 50px; /* Добавлен отступ перед футером */
 }
-

@@ -1,23 +1,28 @@
 .password-toggle {
-    position: relative; /* Делаем контейнер относительным */
-    width: 100%; /* Контейнер занимает всю ширину */
+    position: relative; /* Контейнер для позиционирования иконки */
+    width: 100%;
 }
 
 .password-toggle input {
-    width: 100%; /* Поле ввода занимает всю ширину контейнера */
-    padding-right: 40px; /* Отступ справа для "глазика" */
+    width: 100%;
+    padding-right: 40px; /* Оставляем место для иконки */
 }
 
 .password-toggle-icon {
-    position: absolute; /* Абсолютное позиционирование */
-    right: 10px; /* Отступ справа от поля ввода */
-    top: 50%; /* Выравниваем по вертикали */
-    transform: translateY(-50%); /* Центрируем по вертикали */
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
     cursor: pointer;
     user-select: none;
-    font-size: 1.2em; /* Размер эмодзи */
+    font-size: 1.2em;
+    z-index: 10;
 }
 
-.password-toggle-icon:hover {
-    opacity: 0.8;
+/* Контейнер для ошибки */
+.password-error-container {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: red;
+    min-height: 20px; /* Фиксируем минимальную высоту, чтобы не двигался input */
 }
