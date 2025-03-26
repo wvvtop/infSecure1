@@ -1,12 +1,16 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.sites import requests
 from django.core.validators import RegexValidator
+import requests
+from project1 import settings
 from .validators import validate_password_complexity
 from .models import CustomUser, UserProfile
 # forms.py
 from django import forms
 from .models import UserProfile
 from django.core.exceptions import ValidationError
+from hcaptcha.fields import hCaptchaField
 
 
 class ProfileEditForm(forms.ModelForm):

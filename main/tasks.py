@@ -1,7 +1,6 @@
 import threading
 import time
 from django.apps import apps
-from background_task import background
 from django.utils import timezone
 from datetime import timedelta
 from .models import PendingUser

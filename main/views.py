@@ -1,5 +1,6 @@
 import secrets
 import uuid
+import requests
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
@@ -111,37 +112,53 @@ def send_verification_email(pending_user):
 def register_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
+
         if form.is_valid():
-            email = form.cleaned_data['username']
+            # Получаем ответ от hCaptcha
+            captcha_response = request.POST.get('h-captcha-response')
 
-            # Удаляем старую заявку, если такая есть (чтобы нельзя было спамить кодами)
-            PendingUser.objects.filter(email=email).delete()
+            # Отправляем запрос на сервер hCaptcha для проверки
+            captcha_verification_url = 'https://hcaptcha.com/siteverify'
+            data = {
+                'secret': settings.HCAPTCHA_SECRET_KEY,
+                'response': captcha_response
+            }
+            response = requests.post(captcha_verification_url, data=data)
+            result = response.json()
+            print(result)
+            # Если проверка hCaptcha прошла успешно
+            if result.get('success'):
+                email = form.cleaned_data['username']
 
-            # Создаём нового PendingUser
-            pending_user = PendingUser.objects.create(
-                email=email,
-                password=form.cleaned_data['password1'],
-                first_name=form.cleaned_data['first_name'],
-                last_name=form.cleaned_data['last_name'],
-                phone_number=form.cleaned_data['phone_number']
-            )
+                # Удаляем старую заявку, если такая есть
+                PendingUser.objects.filter(email=email).delete()
 
-            # Отправляем код на почту
-            send_verification_email(pending_user)
+                # Создаём нового PendingUser
+                pending_user = PendingUser.objects.create(
+                    email=email,
+                    password=form.cleaned_data['password1'],
+                    first_name=form.cleaned_data['first_name'],
+                    last_name=form.cleaned_data['last_name'],
+                    phone_number=form.cleaned_data['phone_number']
+                )
 
-            # Сохраняем email в сессии, но не создаём аккаунт сразу
-            request.session['pending_email'] = email
+                # Сохраняем email в сессии
+                request.session['pending_email'] = email
 
-            messages.success(request, "Код подтверждения отправлен на вашу почту.")
-            return redirect('verification_form')  # Перенаправляем на ввод кода
+                # Отправляем код на почту
+                send_verification_email(pending_user)
 
-        else:
-            messages.error(request, "Ошибка при заполнении формы.")
+                messages.success(request, "Код подтверждения отправлен на вашу почту.")
+                return redirect('verification_form')  # Перенаправляем на ввод кода
+            else:
+                form.add_error(None, 'Ошибка проверки hCaptcha. Попробуйте снова.')
 
+        # else:
+        #     messages.error(request, "Ошибка при заполнении формы.")
     else:
         form = CustomUserCreationForm()
 
-    return render(request, 'main/register.html', {'form': form})
+    return render(request, 'main/register.html', {'form': form, "hcaptcha_site_key": settings.HCAPTCHA_SITE_KEY})
 
 
 def verify_email(request):

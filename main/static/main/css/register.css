@@ -26,3 +26,14 @@
     color: red;
     min-height: 20px; /* Фиксируем минимальную высоту, чтобы не двигался input */
 }
+
+.captcha-img {
+    cursor: pointer;
+    display: block;
+    margin-bottom: 10px;
+}
+
+#captcha-status {
+    color: red;
+    font-weight: bold;
+}

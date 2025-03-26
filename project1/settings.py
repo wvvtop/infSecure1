@@ -34,6 +34,7 @@ ALLOWED_HOSTS = ["192.168.138.51", "127.0.0.1", "localhost"]
 
 INSTALLED_APPS = [
     "main",
+    "hcaptcha",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -157,3 +158,8 @@ DEFAULT_FROM_EMAIL = templates.get("email")  # Email, который будет 
 BASE_URL = host
 
 BACKGROUND_TASK_RUN_ASYNC = True
+
+HCAPTCHA_SITE_KEY = templates.get("site_key")    #sitekey
+HCAPTCHA_SECRET_KEY = templates.get("secret_key")   #secretkey
+
+
