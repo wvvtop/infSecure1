@@ -5,6 +5,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import EmailValidator
 
+from project1 import settings
+
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, password=None):
@@ -32,6 +34,8 @@ class CustomUser(AbstractBaseUser):
     password = models.CharField(max_length=128)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
+    is_teacher = models.BooleanField(default=False)  # Новое поле
+    is_student = models.BooleanField(default=False)  # Новое поле
 
     objects = CustomUserManager()
 
@@ -81,3 +85,19 @@ class PendingUser(models.Model):
 
     def __str__(self):
         return self.email
+
+
+class PasswordResetCode(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    code = models.CharField(max_length=5)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = ''.join(secrets.choice('0123456789') for _ in range(5))
+        super().save(*args, **kwargs)
+
+    def is_valid(self):
+        # Изменяем с 3600 (1 час) на 600 (10 минут)
+        return (timezone.now() - self.created_at).total_seconds() < 600 and not self.is_used

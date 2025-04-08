@@ -15,4 +15,7 @@ urlpatterns = [
     path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('verify/', views.verification_form, name='verification_form'),  # Страница ввода кода
     path('verify/submit/', views.verify_email, name='verify_email'),     # Обработка формы
+    path('password-reset/', views.password_reset_request, name='password_reset_request'),
+    path('password-reset/verify-code/', views.password_reset_verify_code, name='password_reset_verify_code'),
+    path('password-reset/new-password/', views.password_reset_new_password, name='password_reset_new_password'),
 ]

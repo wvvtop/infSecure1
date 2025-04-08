@@ -9,10 +9,13 @@ class MainConfig(AppConfig):
     name = 'main'
 
     def ready(self):
-        """Запускаем фоновую задачу при старте Django."""
-        # Импортируем функцию только внутри метода ready
-        from .tasks import cleanup_pending_users
+        """Запускаем фоновые задачи при старте Django."""
+        # Импортируем функции только внутри метода ready
+        from .tasks import cleanup_pending_users, cleanup_expired_codes
 
-        # Запускаем задачу в отдельном потоке
-        task_thread = Thread(target=cleanup_pending_users, daemon=True)
-        task_thread.start()
+        # Запускаем задачи в отдельных потоках
+        pending_users_thread = Thread(target=cleanup_pending_users, daemon=True)
+        pending_users_thread.start()
+
+        reset_codes_thread = Thread(target=cleanup_expired_codes, daemon=True)
+        reset_codes_thread.start()

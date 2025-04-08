@@ -1,13 +1,19 @@
 from django.contrib import admin
-from .models import CustomUser, UserProfile, PendingUser
+from .models import CustomUser, UserProfile, PendingUser, PasswordResetCode
 
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'is_active')  # Только те поля, которые есть в модели
-    list_filter = ('is_active',)  # Только те поля, которые есть в модели
-    search_fields = ('username',)  # Только те поля, которые есть в модели
+    list_display = ('username', 'is_active', 'is_teacher', 'is_student', 'is_admin')
+    list_filter = ('is_active', 'is_teacher', 'is_student', 'is_admin')
+    search_fields = ('username',)
     ordering = ('username',)
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Permissions', {
+            'fields': ('is_active', 'is_admin', 'is_teacher', 'is_student'),
+        }),
+    )
 
 
 @admin.register(UserProfile)
@@ -36,3 +42,18 @@ class PendingUserAdmin(admin.ModelAdmin):
 
     # Сортировка по дате
     date_hierarchy = 'created_at'
+
+
+@admin.register(PasswordResetCode)
+class PasswordResetCodeAdmin(admin.ModelAdmin):
+    list_display = ('user', 'code', 'created_at', 'is_used', 'is_valid')
+    list_filter = ('is_used', 'created_at')
+    search_fields = ('user__email', 'user__username', 'code')
+    readonly_fields = ('created_at',)
+    date_hierarchy = 'created_at'
+
+    def is_valid(self, obj):
+        return obj.is_valid()
+
+    is_valid.boolean = True
+    is_valid.short_description = 'Действителен'

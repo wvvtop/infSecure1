@@ -34,6 +34,7 @@ ALLOWED_HOSTS = ["192.168.138.51", "127.0.0.1", "localhost"]
 
 INSTALLED_APPS = [
     "main",
+    'axes',
     "hcaptcha",
     'django.contrib.admin',
     'django.contrib.auth',
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'axes.middleware.AxesMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -159,7 +161,23 @@ BASE_URL = host
 
 BACKGROUND_TASK_RUN_ASYNC = True
 
-HCAPTCHA_SITE_KEY = templates.get("site_key")    #sitekey
-HCAPTCHA_SECRET_KEY = templates.get("secret_key")   #secretkey
+HCAPTCHA_SITE_KEY = "3ea8109c-1e44-458a-a12a-bdbcaa727e12"    #sitekey
+HCAPTCHA_SECRET_KEY = "ES_e23028b7e343486694a13e81abbcd854"   #secretkey
+
+
+#Задержка для входа
+
+AUTHENTICATION_BACKENDS = (
+    'axes.backends.AxesBackend',  # Axes должен быть перед Django
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+AXES_FAILURE_LIMIT = 3  # Количество попыток до блокировки
+AXES_COOLOFF_TIME = 0.5/60  # Время блокировки в минутах
+AXES_LOCK_OUT_AT_FAILURE = True  # Включает блокировку
+AXES_RESET_ON_SUCCESS = True  # Сброс счетчика при успешном входе
+AXES_LOCKOUT_TEMPLATE = None  # Отключаем шаблон Axes
+AXES_LOCKOUT_URL = None  # Отключаем редирект
+AXES_LOCKOUT_CALLABLE = 'main.views.custom_lockout'  # Указываем свою функцию обработки блокировки
 
 

@@ -25,6 +25,12 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'courses' %}">📚 Курсы</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'contacts' %}">📞 Контакты</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'materials' %}">📑 Билеты ПДД</a> </li>
+
+                    {% if user.is_student %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'profile' %}">Занятие</a>
+                        </li>
+                    {% endif %}
                 </ul>
 
 

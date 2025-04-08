@@ -11,6 +11,7 @@
 
     <link rel="stylesheet" href="{% static 'main/css/register.css' %}">
     <script type="text/javascript" src="{% static 'main/js/register.js' %}"></script>
+    <script type="text/javascript" src="{% static 'main/js/password_utils.js' %}"></script>
 
 
     <h1 class="text-center">📝 Регистрация</h1>
@@ -22,7 +23,8 @@
                 <!-- Поле "Имя пользователя" -->
                 <div class="mb-3">
                     <label for="username" class="form-label">Почта</label>
-                    <input type="text" name="username" id="username" class="form-control" value="{{ form.username.value|default_if_none:'' }}" required>
+                    <input type="text" name="username" id="username" class="form-control"
+                           value="{{ form.username.value|default_if_none:'' }}" required>
                     {% if form.username.errors %}
                         <div class="text-danger">
                             {% for error in form.username.errors %}
@@ -33,42 +35,44 @@
                 </div>
 
                 {# Ввод пароля  ️‍#}
-                             <div class="mb-3">
-                <label for="password1" class="form-label">Пароль</label>
-                <div class="password-toggle">
-                    <input type="password" name="password1" id="password1" class="form-control" required>
-                    <span class="password-toggle-icon" onclick="togglePassword('password1')">😑</span>
-                </div>
-                {% if form.password1.errors %}
-                    <div class="text-danger">
-                        {% for error in form.password1.errors %}
-                            {{ error }}
-                        {% endfor %}
+                <div class="mb-3">
+                    <label for="password1" class="form-label">Пароль</label>
+                    <div class="password-toggle">
+                        <input type="password" name="password1" id="password1" class="form-control" required
+                               maxlength="20">
+                        <span class="password-toggle-icon" onclick="togglePassword('password1')">😑</span>
                     </div>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                <label for="password2" class="form-label">Подтверждение пароля</label>
-                <div class="password-toggle">
-                    <input type="password" name="password2" id="password2" class="form-control" required>
-                    <span class="password-toggle-icon" onclick="togglePassword('password2')">😑️</span>
+                    {% if form.password1.errors %}
+                        <div class="text-danger">
+                            {% for error in form.password1.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
-                {% if form.password2.errors %}
-                    <div class="text-danger">
-                        {% for error in form.password2.errors %}
-                            {{ error }}
-                        {% endfor %}
+
+                <div class="mb-3">
+                    <label for="password2" class="form-label">Подтверждение пароля</label>
+                    <div class="password-toggle">
+                        <input type="password" name="password2" id="password2" class="form-control" required
+                               maxlength="20">
+                        <span class="password-toggle-icon" onclick="togglePassword('password2')">😑️</span>
                     </div>
-                {% endif %}
-            </div>
+                    {% if form.password2.errors %}
+                        <div class="text-danger">
+                            {% for error in form.password2.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
 
 
-                {# Ввод пароля #}
                 <!-- Поле "Имя" -->
                 <div class="mb-3">
                     <label for="first_name" class="form-label">Имя</label>
-                    <input type="text" name="first_name" id="first_name" class="form-control" value="{{ form.first_name.value|default_if_none:'' }}" required>
+                    <input type="text" name="first_name" id="first_name" class="form-control"
+                           value="{{ form.first_name.value|default_if_none:'' }}" required>
                     {% if form.first_name.errors %}
                         <div class="text-danger">
                             {% for error in form.first_name.errors %}
@@ -81,7 +85,8 @@
                 <!-- Поле "Фамилия" -->
                 <div class="mb-3">
                     <label for="last_name" class="form-label">Фамилия</label>
-                    <input type="text" name="last_name" id="last_name" class="form-control" value="{{ form.last_name.value|default_if_none:'' }}" required>
+                    <input type="text" name="last_name" id="last_name" class="form-control"
+                           value="{{ form.last_name.value|default_if_none:'' }}" required>
                     {% if form.last_name.errors %}
                         <div class="text-danger">
                             {% for error in form.last_name.errors %}
@@ -95,7 +100,8 @@
 
                 <div class="mb-3">
                     <label for="phone_number" class="form-label">Номер телефона</label>
-                    <input type="text" name="phone_number" id="phone_number" class="form-control" placeholder="+7 (___) ___ __-__" value="{{ form.phone_number.value|default_if_none:'' }}">
+                    <input type="text" name="phone_number" id="phone_number" class="form-control"
+                           placeholder="+7 (___) ___ __-__" value="{{ form.phone_number.value|default_if_none:'' }}">
                     {% if form.phone_number.errors %}
                         <div class="text-danger">
                             {% for error in form.phone_number.errors %}

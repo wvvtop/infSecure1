@@ -3,31 +3,54 @@
 {% block title %}Вход - Автошкола Онлайн{% endblock %}
 
 {% block content %}
-<h1 class="text-center">🔐 Вход</h1>
-<div class="row justify-content-center">
-    <div class="col-md-4">
-        <form method="post">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="username" class="form-label">Введите почту</label>
-                <input type="text" name="username" id="username" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Пароль</label>
-                <input type="password" name="password" id="password" class="form-control" required>
-            </div>
-            <button type="submit" class="btn btn-dark w-100">Войти</button>
-        </form>
-        <!-- Сообщения об ошибках -->
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-danger mt-3">{{ message }}</div>  <!-- Добавили отступ сверху -->
-            {% endfor %}
-        {% endif %}
+    <h1 class="text-center">🔐 Вход</h1>
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="username" class="form-label">Введите почту</label>
+                    <input type="text" name="username" id="username" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Пароль</label>
+                    <input type="password" name="password" id="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-dark w-100">Войти</button>
+            </form>
+            <!-- Сообщения об ошибках -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-danger mt-3">{{ message }}</div>  <!-- Добавили отступ сверху -->
+                {% endfor %}
+            {% endif %}
 
-        <div class="mt-3 text-center">
-            <p>Нет аккаунта? <a href="{% url 'register' %}">Зарегистрируйтесь</a></p>
+            <div class="mt-3 text-center">
+                <p><a href="{% url 'password_reset_request' %}" class="text-danger">Забыли пароль?</a></p>
+                <p>Нет аккаунта? <a href="{% url 'register' %}">Зарегистрируйтесь</a></p>
+            </div>
         </div>
     </div>
-</div>
+
+    <script>
+        let lockoutTime = {{ lockout_time|default:0 }};
+        let button = document.querySelector("button[type='submit']");
+
+        function updateTimer() {
+            if (lockoutTime > 0) {
+                button.disabled = true;
+                button.innerText = `Подождите ${lockoutTime} сек`;
+                lockoutTime--;
+                setTimeout(updateTimer, 1000);
+            } else {
+                button.disabled = false;
+                button.innerText = "Войти";
+            }
+        }
+
+        if (lockoutTime > 0) {
+            updateTimer();
+        }
+    </script>
+
 {% endblock %}
