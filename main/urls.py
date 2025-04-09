@@ -18,4 +18,7 @@ urlpatterns = [
     path('password-reset/', views.password_reset_request, name='password_reset_request'),
     path('password-reset/verify-code/', views.password_reset_verify_code, name='password_reset_verify_code'),
     path('password-reset/new-password/', views.password_reset_new_password, name='password_reset_new_password'),
+    path('practical-lessons/', views.practical_lesson, name='practical_lessons'),
+    path('teacher-practical_work/', views.teacher_practical_work, name='teacher_practical_work'),
+    path('teache-theory_work', views.teacher_theory_work, name='teacher_theory_work')
 ]

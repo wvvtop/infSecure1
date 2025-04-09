@@ -6,22 +6,23 @@
     <h1 class="text-center">🔐 Вход</h1>
     <div class="row justify-content-center">
         <div class="col-md-4">
-            <form method="post">
+            <form method="post" id="loginForm">
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="username" class="form-label">Введите почту</label>
-                    <input type="text" name="username" id="username" class="form-control" required>
+                    <input type="text" name="username" id="username" class="form-control" required autocomplete="username">
                 </div>
                 <div class="mb-3">
                     <label for="password" class="form-label">Пароль</label>
-                    <input type="password" name="password" id="password" class="form-control" required>
+                    <input type="password" name="password" id="password" class="form-control" required autocomplete="current-password">
                 </div>
-                <button type="submit" class="btn btn-dark w-100">Войти</button>
+                <button type="submit" class="btn btn-dark w-100" id="submitBtn">Войти</button>
             </form>
+
             <!-- Сообщения об ошибках -->
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-danger mt-3">{{ message }}</div>  <!-- Добавили отступ сверху -->
+                    <div class="alert alert-danger mt-3">{{ message }}</div>
                 {% endfor %}
             {% endif %}
 
@@ -33,24 +34,37 @@
     </div>
 
     <script>
-        let lockoutTime = {{ lockout_time|default:0 }};
-        let button = document.querySelector("button[type='submit']");
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('loginForm');
+            const submitBtn = document.getElementById('submitBtn');
+            let lockoutTime = {{ lockout_time|default:0 }};
 
-        function updateTimer() {
-            if (lockoutTime > 0) {
-                button.disabled = true;
-                button.innerText = `Подождите ${lockoutTime} сек`;
-                lockoutTime--;
-                setTimeout(updateTimer, 1000);
-            } else {
-                button.disabled = false;
-                button.innerText = "Войти";
+            // Очистка полей формы при загрузке страницы
+            form.reset();
+
+            // Таймер блокировки
+            function updateTimer() {
+                if (lockoutTime > 0) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = `Подождите ${lockoutTime} сек`;
+                    lockoutTime--;
+                    setTimeout(updateTimer, 1000);
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Войти";
+                }
             }
-        }
 
-        if (lockoutTime > 0) {
-            updateTimer();
-        }
+            // Запуск таймера, если есть блокировка
+            if (lockoutTime > 0) {
+                updateTimer();
+            }
+
+            // Предотвращение повторной отправки формы
+            form.addEventListener('submit', function() {
+                submitBtn.disabled = true;
+
+            });
+        });
     </script>
-
 {% endblock %}

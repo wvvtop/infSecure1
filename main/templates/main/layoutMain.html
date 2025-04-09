@@ -11,53 +11,62 @@
     <link rel="icon" type="image/x-icon" href="{% static 'main/img/favicon.png' %}">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <img src="{% static 'main/img/logo.png' %}" alt="Логотиип" height="40" width="40">
-            <a class="navbar-brand" href="/">Автошкола Онлайн</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">🏠 Главная</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">🚘 О нас</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'courses' %}">📚 Курсы</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'contacts' %}">📞 Контакты</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'materials' %}">📑 Билеты ПДД</a> </li>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <img src="{% static 'main/img/logo.png' %}" alt="Логотиип" height="40" width="40">
 
-                    {% if user.is_student %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'profile' %}">Занятие</a>
-                        </li>
-                    {% endif %}
-                </ul>
+        <a class="navbar-brand" href="/">Автошкола Онлайн</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto me-auto">
+                <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">🏠 Главная</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">🚘 О нас</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'courses' %}">📚 Курсы</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'contacts' %}">📞 Контакты</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'materials' %}">📑 Билеты ПДД</a></li>
+
+                {% if user.is_student %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'practical_lessons' %}">🛣️ Запись на занятие</a>
+                    </li>
+                {% endif %}
+
+                {% if user.is_teacher %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'teacher_practical_work' %}">🛣️ Практическое занятие</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'teacher_theory_work' %}">📊 Теоритическое занятие</a>
+                    </li>
+                {% endif %}
+            </ul>
 
 
+            <ul class="navbar-nav">
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'profile' %}">👤 Профиль</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">🔐 Вход</a>
+                    </li>
+                {% endif %}
+            </ul>
 
-                <ul class="navbar-nav">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'profile' %}">👤 Профиль</a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">🔐 Вход</a>
-                        </li>
-                    {% endif %}
-                </ul>
-
-            </div>
         </div>
-    </nav>
-
-    <div class="container mt-4">
-        {% block content %}
-        {% endblock %}
     </div>
+</nav>
 
-    <footer class="bg-dark text-white text-center py-3 mt-5">
-        © 2025 Автошкола Онлайн. Все права (водительские) защищены.
-    </footer>
+<div class="container mt-4">
+    {% block content %}
+    {% endblock %}
+</div>
+
+<footer class="bg-dark text-white text-center py-3 mt-5">
+    © 2025 Автошкола Онлайн. Все права (водительские) защищены.
+</footer>
 </body>
 </html>

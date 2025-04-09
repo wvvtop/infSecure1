@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import EmailValidator
+from django.contrib.auth import get_user_model
 
 from project1 import settings
 
@@ -101,3 +102,23 @@ class PasswordResetCode(models.Model):
     def is_valid(self):
         # Изменяем с 3600 (1 час) на 600 (10 минут)
         return (timezone.now() - self.created_at).total_seconds() < 600 and not self.is_used
+
+
+class Exams(models.Model):
+    user = models.OneToOneField(
+        get_user_model(),  # Связь с CustomUser
+        on_delete=models.CASCADE,  # Удаление при удалении пользователя
+        related_name='exams'  # Доступ через user.exams
+    )
+    first_test = models.BooleanField(default=False)
+    second_test = models.BooleanField(default=False)
+    third_test = models.BooleanField(default=False)
+    fourth_test = models.BooleanField(default=False)
+    exam = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Результаты экзаменов для {self.user.username}"
+
+    class Meta:
+        verbose_name = "Экзамен"
+        verbose_name_plural = "Экзамены"

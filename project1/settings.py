@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 #host = "http://localhost:8000"
-host = "192.168.138.51"
+host = "192.168.0.102"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-)b*sav!dbpr0=zvz5r#52_n6@#srj_wmzv%zglflixg+^vtran
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.138.51", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["192.168.138.51", "127.0.0.1", "localhost", host]
 
 # Application definition
 
@@ -172,7 +172,7 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-AXES_FAILURE_LIMIT = 3  # Количество попыток до блокировки
+AXES_FAILURE_LIMIT = 4  # Количество попыток до блокировки
 AXES_COOLOFF_TIME = 0.5/60  # Время блокировки в минутах
 AXES_LOCK_OUT_AT_FAILURE = True  # Включает блокировку
 AXES_RESET_ON_SUCCESS = True  # Сброс счетчика при успешном входе

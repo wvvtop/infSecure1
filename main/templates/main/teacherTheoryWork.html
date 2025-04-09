@@ -1,0 +1,148 @@
+{% extends 'main/layoutMain.html' %}
+{% load static %}
+{% block title %}Работа с теорией - Автошкола Онлайн{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1 class="display-4">Выставление зачётов</h1>
+        </div>
+
+        <!-- Поиск студентов -->
+        <form method="get" class="mb-4">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control"
+                       placeholder="Поиск по имени, фамилии или email"
+                       value="{{ search_query }}">
+                {% if search_query %}
+                    <a href="{% url 'teacher_theory_work' %}" class="btn btn-secondary">Сбросить</a>
+                {% endif %}
+                <button type="submit" class="btn btn-primary">Найти</button>
+            </div>
+        </form>
+
+        <!-- Таблица студентов -->
+        <form method="post">
+            {% csrf_token %}
+            <table class="table table-bordered table-hover">
+                <thead class="thead-dark">
+                <tr>
+                    <th>Студент</th>
+                    <th class="text-center">1-й тест</th>
+                    <th class="text-center">2-й тест</th>
+                    <th class="text-center">3-й тест</th>
+                    <th class="text-center">4-й тест</th>
+                    <th class="text-center">Экзамен</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for student in students %}
+                    <tr>
+                        <td>
+                            {{ student.profile.first_name }} {{ student.profile.last_name }}
+                            <small class="text-muted d-block">{{ student.username }}</small>
+                        </td>
+
+                        <!-- 1-й тест -->
+                        <td class="text-center">
+                            <input type="checkbox"
+                                   name="student_{{ student.id }}_first_test"
+                                   value="1"
+                                   {% if student.exams.first_test %}checked{% endif %}
+                                   onchange="callUpdateExam(this, {{ student.id }}, 'first_test')">
+                        </td>
+
+                        <!-- 2-й тест -->
+                        <td class="text-center">
+                            <input type="checkbox"
+                                   name="student_{{ student.id }}_second_test"
+                                   value="1"
+                                   {% if student.exams.second_test %}checked{% endif %}
+                                   onchange="callUpdateExam(this, {{ student.id }}, 'second_test')">
+                        </td>
+
+                        <!-- 3-й тест -->
+                        <td class="text-center">
+                            <input type="checkbox"
+                                   name="student_{{ student.id }}_third_test"
+                                   value="1"
+                                   {% if student.exams.third_test %}checked{% endif %}
+                                   onchange="callUpdateExam(this, {{ student.id }}, 'third_test')">
+                        </td>
+
+                        <!-- 4-й тест -->
+                        <td class="text-center">
+                            <input type="checkbox"
+                                   name="student_{{ student.id }}_fourth_test"
+                                   value="1"
+                                   {% if student.exams.fourth_test %}checked{% endif %}
+                                   onchange="callUpdateExam(this, {{ student.id }}, 'fourth_test')">
+                        </td>
+
+                        <!-- Экзамен -->
+                        <td class="text-center">
+                            <input type="checkbox"
+                                   name="student_{{ student.id }}_exam"
+                                   value="1"
+                                   {% if student.exams.exam %}checked{% endif %}
+                                   onchange="callUpdateExam(this, {{ student.id }}, 'exam')">
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            Студенты не найдены
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </form>
+
+        <!-- Пагинация -->
+        {% if students.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if students.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1&search={{ search_query }}">&laquo; Первая</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?page={{ students.previous_page_number }}&search={{ search_query }}">Назад</a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in students.paginator.page_range %}
+                        {% if students.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}&search={{ search_query }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if students.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ students.next_page_number }}&search={{ search_query }}">Вперед</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?page={{ students.paginator.num_pages }}&search={{ search_query }}">Последняя
+                                &raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+
+    <script src="{% static 'main/js/teacherTheoryWork.js' %}"></script>
+    <script>
+        // Обёртка вокруг вызова из шаблона (передаёт CSRF токен)
+        function callUpdateExam(checkbox, studentId, fieldName) {
+            updateExam(checkbox, studentId, fieldName, '{{ csrf_token }}');
+        }
+    </script>
+{% endblock %}

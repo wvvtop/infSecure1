@@ -1,0 +1,84 @@
+{% extends 'main/layoutMain.html' %}
+
+{% block title %}Практическое занятие - Автошкола Онлайн{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="text-center mb-4">
+        <h1>Практические занятия</h1>
+    </div>
+
+    <!-- Таблица с результатами -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Мои результаты</h3>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Тест</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Первый зачет</td>
+                        <td>{% if exams.first_test %}✅ Сдан{% else %}❌ Не сдан{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Второй зачет</td>
+                        <td>{% if exams.second_test %}✅ Сдан{% else %}❌ Не сдан{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Третий зачет</td>
+                        <td>{% if exams.third_test %}✅ Сдан{% else %}❌ Не сдан{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Четвертый зачет</td>
+                        <td>{% if exams.fourth_test %}✅ Сдан{% else %}❌ Не сдан{% endif %}</td>
+                    </tr>
+                    <tr class="table-primary">
+                        <td><strong>Итоговый экзамен</strong></td>
+                        <td>{% if exams.exam %}✅ Сдан{% else %}❌ Не сдан{% endif %}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Прогресс-бар (рассчитанный во view) -->
+            <div class="progress mt-3">
+                <div class="progress-bar"
+                     style="width: {{ progress_width }}%"
+                     aria-valuenow="{{ completed_tests }}"
+                     aria-valuemin="0"
+                     aria-valuemax="4">
+                    {{ completed_tests }} из 4 зачетов
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Дополнительный функционал -->
+    {% if show_extra_functionality %}
+    <div class="card border-success">
+        <div class="card-header bg-success text-white">
+            <h4>Доступные действия</h4>
+        </div>
+        <div class="card-body">
+            <p>Вы сдали {{ completed_tests }} из 4 тестов. Доступно:</p>
+            <ul class="mb-3">
+                <li>Запись на практическое вождение</li>
+                <li>Выбор инструктора</li>
+                <li>Просмотр доступного расписания</li>
+            </ul>
+            <a href="#" class="btn btn-success">Записаться на занятие</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Для доступа к записи необходимо сдать 3 из 4 тестов.
+        Ваш прогресс: {{ completed_tests }}/4
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,9 +1,11 @@
 import secrets
 import requests
+from axes.helpers import get_lockout_message
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import PendingUser, CustomUser, PasswordResetCode
+from django.core.paginator import Paginator
+from .models import PendingUser, CustomUser, PasswordResetCode, Exams
 from django.utils import timezone
 from datetime import timedelta
 from .forms import CustomUserCreationForm
@@ -19,6 +21,9 @@ from django.contrib.auth import get_backends
 from axes.utils import reset
 from axes.handlers.proxy import AxesProxyHandler
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.db.models import Q
 
 
 def home(request):
@@ -40,13 +45,77 @@ def contacts(request):
 def login_page(request):
     return render(request, "main/login.html")
 
-# def register(request):
-#     return render(request, "main/register.html")
-
 
 @login_required(login_url="login")
 def profile_view(request):
     return render(request, 'main/profile.html')
+
+
+@login_required(login_url="login")
+def teacher_theory_work(request):
+    if not request.user.is_teacher:
+        return redirect("home")
+
+    # Поиск студентов
+    search_query = request.GET.get('search', '')
+    students_list = CustomUser.objects.filter(is_student=True) \
+        .select_related('profile', 'exams') \
+        .order_by('profile__last_name', 'profile__first_name')
+
+    if search_query:
+        students_list = students_list.filter(
+            Q(profile__first_name__icontains=search_query) |
+            Q(profile__last_name__icontains=search_query) |
+            Q(username__icontains=search_query)
+        )
+
+    # Пагинация по 20 пользователей
+    paginator = Paginator(students_list, 20)
+    page_number = request.GET.get('page')
+    students = paginator.get_page(page_number)
+
+    # Обработка формы
+    if request.method == 'POST':
+        student_id = request.POST.get('student_id')
+        exam_field = request.POST.get('exam_field')
+        value = request.POST.get('value') == '1'
+
+        if student_id and exam_field:
+            student = CustomUser.objects.get(id=student_id)
+            exam, created = Exams.objects.get_or_create(user=student)
+            setattr(exam, exam_field, value)
+            exam.save()
+
+    context = {
+        'students': students,
+        'search_query': search_query,
+    }
+    return render(request, "main/teacherTheoryWork.html", context)
+
+
+@login_required(login_url="login")
+def teacher_practical_work(request):
+    if request.user.is_teacher:
+        return render(request, "main/teacherPracticalWork.html")
+    else:
+        return redirect("home")
+
+
+@login_required(login_url="login")
+def practical_lesson(request):
+    if not request.user.is_student:
+        return redirect("home")
+
+    exams, created = Exams.objects.get_or_create(user=request.user)
+    completed_tests = sum([exams.first_test, exams.second_test, exams.third_test, exams.fourth_test])
+
+    context = {
+        'exams': exams,
+        'completed_tests': completed_tests,
+        'progress_width': completed_tests * 25,  # Считаем процент прямо во view
+        'show_extra_functionality': completed_tests >= 3
+    }
+    return render(request, "main/practicalLesson.html", context)
 
 
 def materials(request):
@@ -74,8 +143,10 @@ def edit_profile(request):
 
 
 def login_view(request):
-    remaining_time = 0
-
+    # Проверяем блокировку при любом запросе (GET или POST)
+    username = request.POST.get('username', '').strip() if request.method == 'POST' else ''
+    ip_address = request.META.get('REMOTE_ADDR')
+    
     if AxesProxyHandler.is_locked(request):
         # Находим последнюю попытку входа с этого IP
         ip_attempt = AccessAttempt.objects.filter(ip_address=request.META.get('REMOTE_ADDR')).order_by(
@@ -88,50 +159,42 @@ def login_view(request):
         messages.error(request, f"⏳ Вход в учетную запись заблокирован: {remaining_time} сек.")
         return render(request, 'main/login.html', {'form': AuthenticationForm(), 'lockout_time': remaining_time})
 
+    # Проверяем блокировку по IP и username
+    is_locked = AxesProxyHandler.is_locked(request, credentials={'username': username}) if username else False
+
+    # Если есть блокировка - показываем сообщение
+    if is_locked:
+        attempt = AccessAttempt.objects.filter(
+            username=username if username else None,
+            ip_address=ip_address
+        ).order_by('-attempt_time').first()
+
+        if attempt:
+            lockout_time = attempt.attempt_time + timedelta(seconds=30)
+            remaining_time = max(0, int((lockout_time - now()).total_seconds()))
+            messages.error(request, f"⏳ Слишком много попыток! Попробуйте через {remaining_time} сек.")
+            return render(request, 'main/login.html', {'form': AuthenticationForm(), 'lockout_time': remaining_time})
+
+    # Обработка POST-запроса
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
-        username = request.POST.get('username')
-
-        # Проверяем блокировку перед обработкой формы
-        if username:
-            attempt = AccessAttempt.objects.filter(username=username).first()
-            if attempt and attempt.failures_since_start >= 3:
-                lockout_time = attempt.attempt_time + timedelta(seconds=30)
-                remaining_time = max(0, int((lockout_time - now()).total_seconds()))
-
-                if remaining_time > 0:
-                    messages.error(request, f"⏳ Вход в учетную запись заблокирован: попробуйте через {remaining_time} сек.")
-                    return render(request, 'main/login.html', {'form': form, 'lockout_time': remaining_time})
-
-        if AxesProxyHandler.is_locked(request):
-            messages.error(request, "🚫 Слишком много попыток! Попробуйте позже.")
-            return render(request, 'main/login.html', {'form': form, 'lockout_time': 30})
 
         if form.is_valid():
-            user = authenticate(request, username=form.cleaned_data['username'], password=form.cleaned_data['password'])
-
+            user = authenticate(
+                request,
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password']
+            )
             if user is not None:
-                reset(username=username)
                 login(request, user)
                 return redirect('home')
-            else:
-                # После неудачной аутентификации проверяем, не достигли ли мы лимита
-                if username:
-                    attempt = AccessAttempt.objects.filter(username=username).first()
-                    if attempt and attempt.failures_since_start >= 3:
-                        lockout_time = attempt.attempt_time + timedelta(seconds=30)
-                        remaining_time = max(0, int((lockout_time - now()).total_seconds()))
-                        messages.error(request,
-                                       f"⏳ Вход в учетную запись заблокирована: попробуйте через {remaining_time} сек.")
-                        return render(request, 'main/login.html', {'form': form, 'lockout_time': remaining_time})
 
-                messages.error(request, "❌ Неправильная почта или пароль")
-        else:
-            messages.error(request, "❌ Неправильная почта или пароль")
-    else:
-        form = AuthenticationForm()
+        # При любой ошибке делаем редирект, чтобы очистить POST-данные
+        messages.error(request, "❌ Неверный логин или пароль")
+        return redirect('login')
 
-    return render(request, 'main/login.html', {'form': form, 'lockout_time': remaining_time})
+    # GET-запрос - показываем чистую форму
+    return render(request, 'main/login.html', {'form': AuthenticationForm(), 'lockout_time': 0})
 
 
 def custom_lockout(request, credentials=None, *args, **kwargs):
@@ -148,15 +211,25 @@ def custom_lockout(request, credentials=None, *args, **kwargs):
     return render(request, 'main/login.html', {'form': AuthenticationForm(), 'lockout_time': remaining_time})
 
 
+
 def send_verification_email(pending_user):
     subject = 'Ваш код подтверждения'
-    plain_message = f'Ваш код подтверждения: {pending_user.verification_code}'
+    plain_message = (
+        f'Здравствуйте!\n\n'
+        f'Ваш код подтверждения: {pending_user.verification_code}\n\n'
+        f'Если вы не запрашивали код, просто проигнорируйте это письмо.\n\n'
+        f'С уважением,\nКоманда проекта.'
+    )
+
     html_message = f'''
+        <p>Здравствуйте!</p>
         <p>Ваш код подтверждения:</p>
-        <p style="font-size: 24px; font-weight: bold;">
-            {pending_user.verification_code}
-        </p>
+        <p style="font-size: 24px; font-weight: bold;">{pending_user.verification_code}</p>
+        <p>Если вы не запрашивали код, просто проигнорируйте это письмо.</p>
+        <br>
+        <p>С уважением,<br>Команда проекта.</p>
     '''
+
     send_mail(
         subject,
         plain_message,
