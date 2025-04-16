@@ -1,0 +1,25 @@
+.course-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    height: auto;
+}
+
+.course-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.extra-info {
+    opacity: 0;
+    max-height: 0;
+    transition: opacity 0.3s ease, max-height 0.3s ease;
+    overflow: hidden;
+    font-size: 0.9rem;
+    margin-top: 10px;
+}
+
+.course-card:hover .extra-info {
+    opacity: 1;
+    max-height: 200px;
+}
