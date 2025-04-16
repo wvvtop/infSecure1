@@ -1,7 +1,5 @@
 import secrets
 import requests
-from axes.helpers import get_lockout_message
-from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -18,12 +16,19 @@ from .forms import ProfileEditForm
 from django.utils.timezone import now
 from axes.models import AccessAttempt
 from django.contrib.auth import get_backends
-from axes.utils import reset
 from axes.handlers.proxy import AxesProxyHandler
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.db.models import Q
+
+
+def anonymous_required(view_function):
+    def wrapper(request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('home')  # или любой другой путь
+        return view_function(request, *args, **kwargs)
+    return wrapper
 
 
 def home(request):
@@ -42,8 +47,8 @@ def contacts(request):
     return render(request, "main/contacts.html")
 
 
-def login_page(request):
-    return render(request, "main/login.html")
+def materials(request):
+    return render(request, 'main/ticketsPDD.html')
 
 
 @login_required(login_url="login")
@@ -118,10 +123,6 @@ def practical_lesson(request):
     return render(request, "main/practicalLesson.html", context)
 
 
-def materials(request):
-    return render(request, 'main/ticketsPDD.html')
-
-
 @login_required
 def edit_profile(request):
     profile = request.user.profile  # Получаем профиль текущего пользователя
@@ -142,6 +143,7 @@ def edit_profile(request):
     return render(request, 'main/editProfile.html', {'form': form})
 
 
+@anonymous_required
 def login_view(request):
     # Проверяем блокировку при любом запросе (GET или POST)
     username = request.POST.get('username', '').strip() if request.method == 'POST' else ''
@@ -211,7 +213,6 @@ def custom_lockout(request, credentials=None, *args, **kwargs):
     return render(request, 'main/login.html', {'form': AuthenticationForm(), 'lockout_time': remaining_time})
 
 
-
 def send_verification_email(pending_user):
     subject = 'Ваш код подтверждения'
     plain_message = (
@@ -240,6 +241,7 @@ def send_verification_email(pending_user):
     )
 
 
+@anonymous_required
 def register_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -292,6 +294,7 @@ def register_view(request):
     return render(request, 'main/register.html', {'form': form, "hcaptcha_site_key": settings.HCAPTCHA_SITE_KEY})
 
 
+@anonymous_required
 def verify_email(request):
     email = request.session.get('pending_email')
 
@@ -367,6 +370,7 @@ def verify_email(request):
     return render(request, 'main/verification_form.html', {'email': email})
 
 
+@anonymous_required
 def verification_form(request):
     email = request.session.get('pending_email')
 
@@ -377,6 +381,7 @@ def verification_form(request):
     return render(request, 'main/verification_form.html', {'email': email})
 
 
+@anonymous_required
 def password_reset_request(request):
     hcaptcha_site_key = settings.HCAPTCHA_SITE_KEY
 
@@ -444,6 +449,7 @@ def password_reset_request(request):
     })
 
 
+@anonymous_required
 def password_reset_verify_code(request):
     email = request.session.get('reset_email')
     if not email:
@@ -472,6 +478,7 @@ def password_reset_verify_code(request):
     return render(request, 'main/password_reset_verify_code.html', {'email': email})
 
 
+@anonymous_required
 def password_reset_new_password(request):
     user_id = request.session.get('reset_user_id')
     if not user_id:
