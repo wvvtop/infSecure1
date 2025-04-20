@@ -1,0 +1,211 @@
+{% extends 'main/layoutMain.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h2>Рабочее пространство инструктора</h2>
+
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'schedule' %}active{% endif %}"
+                   href="?tab=schedule">Планирование занятий</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'students' %}active{% endif %}"
+                   href="?tab=students">Записавшиеся студенты</a>
+            </li>
+        </ul>
+
+        {% if active_tab == 'schedule' %}
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4>Расписание на {{ current_week_start|date:"d.m.Y" }} - {{ current_week_end|date:"d.m.Y" }}</h4>
+                    <div class="week-navigation">
+                        {% if week_offset > 0 %}
+                            <a href="?tab=schedule&week={{ week_offset|add:"-1" }}"
+                               class="btn btn-sm btn-outline-primary">
+                                ← Предыдущая
+                            </a>
+                        {% else %}
+                            <button class="btn btn-sm btn-outline-primary disabled">← Предыдущая</button>
+                        {% endif %}
+
+                        <span class="mx-2">Неделя {{ week_offset|add:"1" }} из {{ max_week_offset|add:"1" }}</span>
+
+                        {% if week_offset < max_week_offset %}
+                            <a href="?tab=schedule&week={{ week_offset|add:"1" }}"
+                               class="btn btn-sm btn-outline-primary">
+                                Следующая →
+                            </a>
+                        {% else %}
+                            <button class="btn btn-sm btn-outline-primary disabled">Следующая →</button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="schedule-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="week_offset" value="{{ week_offset }}">
+
+                        <table class="table table-bordered">
+                            <thead>
+                            <tr>
+                                <th>День недели</th>
+                                <th>8:30</th>
+                                <th>10:15</th>
+                                <th>12:00</th>
+                                <th>14:10</th>
+                                <th>15:55</th>
+                                <th>17:40</th>
+                                <th>Действия</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for day in schedule %}
+                                <tr>
+                                    <td>
+                                        {{ day.day_name }}<br>
+                                        <small>{{ day.date|date:"d.m.Y" }}</small>
+                                    </td>
+                                    {% for slot in day.slots %}
+                                        <td class="{% if slot.has_student %}table-danger{% elif slot.exists %}table-success{% endif %}">
+                                            <div class="form-check d-flex justify-content-center">
+                                                <input class="form-check-input slot-checkbox"
+                                                       type="checkbox"
+                                                       name="time_slots"
+                                                       value="{{ day.date|date:'Y-m-d' }}_{{ slot.value }}"
+                                                       id="slot_{{ day.date|date:'Y-m-d' }}_{{ slot.value }}"
+                                                       {% if slot.exists %}checked{% endif %}>
+                                                <label class="form-check-label"
+                                                       for="slot_{{ day.date|date:'Y-m-d' }}_{{ slot.value }}">
+                                                    {{ slot.time }}
+                                                </label>
+                                            </div>
+                                        </td>
+                                    {% endfor %}
+                                    <td>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary select-all-day mb-1"
+                                                data-day="{{ day.date|date:'Y-m-d' }}">
+                                            Выбрать все
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary select-before-1555"
+                                                data-day="{{ day.date|date:'Y-m-d' }}">
+                                            До 15:55
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger reset-day"
+                                                data-day="{{ day.date|date:'Y-m-d' }}">
+                                            Сбросить все
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <div class="text-center mt-3">
+                            <button type="submit" name="update_schedule" class="btn btn-primary">Сохранить расписание
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% elif active_tab == 'students' %}
+            <div class="card">
+                <div class="card-header">
+                    <h4>Записавшиеся студенты</h4>
+                </div>
+                <div class="card-body">
+                    {% if today_practices %}
+                        <div class="mb-4">
+                            <h5>Сегодня ({{ today|date:"d.m.Y" }})</h5>
+                            <table class="table table-striped">
+                                <thead>
+                                <tr>
+                                    <th>Время</th>
+                                    <th>Студент</th>
+                                    <th>Телефон</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for practice in today_practices %}
+                                    <tr>
+                                        <td>{{ practice.time_of_lesson }}</td>
+                                        <td>{{ practice.student.profile.get_full_name }}</td>
+                                        <td>{{ practice.student.profile.phone_number }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+
+                    {% for day, practices in other_days %}
+                        <div class="mb-4">
+                            <h5>{{ day|date:"l" }}, {{ day|date:"d.m.Y" }}</h5>
+                            <table class="table table-striped">
+                                <thead>
+                                <tr>
+                                    <th>Время</th>
+                                    <th>Студент</th>
+                                    <th>Телефон</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for practice in practices %}
+                                    <tr>
+                                        <td>{{ practice.time_of_lesson }}</td>
+                                        <td>{{ practice.student.profile.get_full_name }}</td>
+                                        <td>{{ practice.student.profile.phone_number }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% empty %}
+                        <div class="alert alert-info">
+                            Нет запланированных занятий с учениками
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Выбрать все слоты в день
+            document.querySelectorAll('.select-all-day').forEach(button => {
+                button.addEventListener('click', function () {
+                    const day = this.dataset.day;
+                    document.querySelectorAll(`input[name="time_slots"][value^="${day}_"]`).forEach(checkbox => {
+                        checkbox.checked = true;
+                    });
+                });
+            });
+
+            // Выбрать слоты до 15:55
+            document.querySelectorAll('.select-before-1555').forEach(button => {
+                button.addEventListener('click', function () {
+                    const day = this.dataset.day;
+                    const earlyTimes = ['08:30', '10:15', '12:00', '14:10', '15:55'];
+
+                    document.querySelectorAll(`input[name="time_slots"][value^="${day}_"]`).forEach(checkbox => {
+                        const time = checkbox.value.split('_')[1];
+                        checkbox.checked = earlyTimes.includes(time);
+                    });
+                });
+            });
+
+            document.querySelectorAll('.reset-day').forEach(button => {
+                button.addEventListener('click', function () {
+                    const day = this.dataset.day;
+                    document.querySelectorAll(`input[name="time_slots"][value^="${day}_"]`).forEach(checkbox => {
+                        checkbox.checked = false;  // Снимаем все галочки
+                    });
+                });
+            });
+        });
+    </script>
+{% endblock %}
