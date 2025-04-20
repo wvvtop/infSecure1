@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CustomUser, UserProfile, PendingUser, PasswordResetCode, Exams
+from .models import CustomUser, UserProfile, PendingUser, PasswordResetCode, Exams, Practice
 
 
 @admin.register(CustomUser)
@@ -130,3 +130,10 @@ class ExamsAdmin(admin.ModelAdmin):
             'fields': ('exam',)
         }),
     )
+
+
+@admin.register(Practice)
+class PracticeAdmin(admin.ModelAdmin):
+    list_display = ('teacher', 'date_of_lesson', 'time_of_lesson', 'student')
+    list_filter = ('date_of_lesson', 'teacher')
+    search_fields = ('teacher__username', 'student__username')

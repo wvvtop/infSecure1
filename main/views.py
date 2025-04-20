@@ -1,11 +1,13 @@
 import secrets
+from zoneinfo import ZoneInfo
+from django.db import IntegrityError
 import requests
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.paginator import Paginator
-from .models import PendingUser, CustomUser, PasswordResetCode, Exams
+from .models import PendingUser, CustomUser, PasswordResetCode, Exams, Practice
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime, date, time
 from .forms import CustomUserCreationForm
 from .models import UserProfile
 from django.contrib.auth import authenticate, login
@@ -99,15 +101,7 @@ def teacher_theory_work(request):
 
 
 @login_required(login_url="login")
-def teacher_practical_work(request):
-    if request.user.is_teacher:
-        return render(request, "main/teacherPracticalWork.html")
-    else:
-        return redirect("home")
-
-
-@login_required(login_url="login")
-def practical_lesson(request):
+def student_practical_lesson(request):
     if not request.user.is_student:
         return redirect("home")
 
@@ -509,5 +503,195 @@ def password_reset_new_password(request):
             return redirect('login')
 
     return render(request, 'main/password_reset_new_password.html')
+
+
+
+TIME_SLOTS = [
+    ('08:30', '8:30'),
+    ('10:15', '10:15'),
+    ('12:00', '12:00'),
+    ('14:10', '14:10'),
+    ('15:55', '15:55'),
+    ('17:40', '17:40'),
+]
+
+
+def send_cancellation_email(practice):
+    student = practice.student
+    subject = 'Отмена занятия по вождению'
+    message = (
+        f'Здравствуйте, {student.profile.first_name}!\n\n'
+        f'Ваше занятие с инструктором {practice.teacher.profile.get_full_name()} '
+        f'на {practice.date_of_lesson.strftime("%d.%m.%Y")} в {practice.time_of_lesson} было отменено.\n\n'
+        'Пожалуйста, выберите другое время или другого инструктора.\n\n'
+        'С уважением,\n'
+        'Автошкола'
+    )
+    send_mail(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        [student.username],
+        fail_silently=False
+    )
+
+
+def get_russian_weekday(date_obj):
+    weekdays = {
+        0: 'Понедельник',
+        1: 'Вторник',
+        2: 'Среда',
+        3: 'Четверг',
+        4: 'Пятница',
+        5: 'Суббота',
+        6: 'Воскресенье'
+    }
+    return weekdays[date_obj.weekday()]
+
+
+@login_required(login_url="login")
+def teacher_practical_work(request):
+    if not request.user.is_teacher:
+        return redirect('home')
+
+        # Активируем нужный часовой пояс
+    tz = ZoneInfo(settings.TIME_ZONE)
+    timezone.activate(tz)
+
+    # Получаем текущее время с учетом часового пояса
+    _now = timezone.localtime(timezone.now())
+    today = _now.date()
+    current_week_start = today - timedelta(days=today.weekday())
+
+    # Обработка POST-запроса
+    if request.method == 'POST' and 'update_schedule' in request.POST:
+        week_offset = int(request.POST.get('week_offset', 0))
+        selected_week_start = current_week_start + timedelta(weeks=week_offset)
+        selected_slots = request.POST.getlist('time_slots')
+
+        # Получаем ВСЕ существующие занятия на эту неделю
+        existing_practices = Practice.objects.filter(
+            teacher=request.user,
+            date_of_lesson__gte=selected_week_start,
+            date_of_lesson__lte=selected_week_start + timedelta(days=6)
+        )
+
+        # Создаем список уже занятых слотов в формате "2025-04-21_08:30"
+        existing_slot_keys = [
+            f"{p.date_of_lesson}_{p.time_of_lesson.strftime('%H:%M')}"
+            for p in existing_practices
+        ]
+
+        # 1. Создаем только НОВЫЕ слоты (которых еще нет)
+        for slot_key in selected_slots:
+            if slot_key not in existing_slot_keys:  # Если такого слота нет в базе
+                date_str, time_str = slot_key.split('_')
+                try:
+                    Practice.objects.create(
+                        teacher=request.user,
+                        date_of_lesson=date.fromisoformat(date_str),
+                        time_of_lesson=time_str,
+                        student=None
+                    )
+                except IntegrityError:
+                    continue  # На случай редких коллизий
+
+        # 2. Удаляем слоты, которые СНЯЛИ галочкой
+        for practice in existing_practices:
+            practice_key = f"{practice.date_of_lesson}_{practice.time_of_lesson.strftime('%H:%M')}"
+            if practice_key not in selected_slots:  # Если галочку сняли
+                if practice.student:  # Если студент записан - отправляем уведомление
+                    send_cancellation_email(practice)
+                practice.delete()  # Удаляем занятие
+
+        messages.success(request, 'Расписание обновлено!')
+        return redirect(request.get_full_path())
+
+    # Обработка GET-запроса
+    week_offset = max(0, int(request.GET.get('week', 0)))  # Не позволяем выбрать прошедшие недели
+    selected_week_start = current_week_start + timedelta(weeks=week_offset)
+
+    # Ограничиваем просмотр 3 неделями вперед
+    max_week_start = current_week_start + timedelta(weeks=3)
+    if selected_week_start > max_week_start:
+        selected_week_start = max_week_start
+        week_offset = 3
+
+    # Создаем список дней для выбранной недели
+    week_days = []
+    for i in range(7):
+        day = selected_week_start + timedelta(days=i)
+        week_days.append(day)
+
+    # Получаем занятия для отображения
+    practices = Practice.objects.filter(
+        teacher=request.user,
+        date_of_lesson__gte=selected_week_start,
+        date_of_lesson__lte=selected_week_start + timedelta(days=6)
+    ).order_by('date_of_lesson', 'time_of_lesson')
+
+    # Формируем расписание
+    schedule = []
+    for day in week_days:
+        day_schedule = {
+            'date': day,
+            'day_name': get_russian_weekday(day),
+            'slots': []
+        }
+
+        for time_slot in TIME_SLOTS:
+            slot_value, slot_display = time_slot
+            practice_exists = practices.filter(
+                date_of_lesson=day,
+                time_of_lesson=slot_value
+            ).exists()
+
+            practice_with_student = practices.filter(
+                date_of_lesson=day,
+                time_of_lesson=slot_value,
+                student__isnull=False
+            ).first()
+
+            day_schedule['slots'].append({
+                'time': slot_display,
+                'value': slot_value,
+                'exists': practice_exists,
+                'has_student': practice_with_student is not None,
+                'practice_id': practice_with_student.id if practice_with_student else None
+            })
+
+        schedule.append(day_schedule)
+
+    # Подготовка данных для вкладки студентов
+    upcoming_practices = Practice.objects.filter(
+        teacher=request.user,
+        date_of_lesson__gte=today,
+        student__isnull=False
+    ).order_by('date_of_lesson', 'time_of_lesson')
+
+    practices_by_day = {}
+    for practice in upcoming_practices:
+        if practice.date_of_lesson not in practices_by_day:
+            practices_by_day[practice.date_of_lesson] = []
+        practices_by_day[practice.date_of_lesson].append(practice)
+
+    sorted_days = sorted(practices_by_day.keys())
+    today_practices = practices_by_day.get(today, [])
+    other_days = [(day, practices_by_day[day]) for day in sorted_days if day != today]
+
+    context = {
+        'schedule': schedule,
+        'current_week_start': selected_week_start,
+        'current_week_end': selected_week_start + timedelta(days=6),
+        'week_offset': week_offset,
+        'max_week_offset': 3,
+        'today': today,
+        'today_practices': today_practices,
+        'other_days': other_days,
+        'active_tab': request.GET.get('tab', 'schedule')
+    }
+
+    return render(request, 'main/teacher_practical_work.html', context)
+
 
 # Create your views here.
