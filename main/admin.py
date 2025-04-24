@@ -67,12 +67,67 @@ class CustomUserAdmin(admin.ModelAdmin):
         return super().render_change_form(request, context, *args, **kwargs)
 
 
-
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'first_name', 'last_name', 'phone_number')
+    list_display = ('user', 'first_name', 'last_name', 'phone_number', 'user_status', 'has_exams_record')
+    list_filter = ('user__is_active', 'user__is_teacher', 'user__is_student', 'user__is_admin')
     search_fields = ('user__username', 'first_name', 'last_name')
-    list_filter = ('user__is_active',)
+    ordering = ('user__username',)
+    raw_id_fields = ('user',)  # Для удобства выбора пользователя
+
+    actions = ['make_student', 'make_teacher']
+
+    # Кастомные методы для отображения статуса пользователя
+    def user_status(self, obj):
+        status = []
+        if obj.user.is_admin:
+            status.append('Админ')
+        if obj.user.is_teacher:
+            status.append('Преподаватель')
+        if obj.user.is_student:
+            status.append('Студент')
+        return ', '.join(status) if status else 'Обычный пользователь'
+
+    user_status.short_description = 'Статус'
+
+    def has_exams_record(self, obj):
+        return hasattr(obj.user, 'exams')
+
+    has_exams_record.boolean = True
+    has_exams_record.short_description = 'Запись Exams'
+
+    # Действие "Сделать студентом"
+    def make_student(self, request, queryset):
+        # Получаем пользователей из профилей
+        users = CustomUser.objects.filter(id__in=queryset.values_list('user__id', flat=True))
+
+        # Обновляем статус и создаем Exams
+        updated_users = users.update(is_student=True, is_teacher=False)
+
+        # Создаем записи Exams для тех, у кого их нет
+        created_records = 0
+        for user in users:
+            _, created = Exams.objects.get_or_create(user=user)
+            if created:
+                created_records += 1
+
+        self.message_user(
+            request,
+            f"Обновлено {updated_users} пользователей. Создано {created_records} записей Exams."
+        )
+
+    make_student.short_description = "Сделать выбранных студентами (+Exams)"
+
+    # Действие "Сделать преподавателем"
+    def make_teacher(self, request, queryset):
+        users = CustomUser.objects.filter(id__in=queryset.values_list('user__id', flat=True))
+        users.update(is_teacher=True, is_student=False)
+        self.message_user(request, f"{users.count()} пользователей теперь преподаватели")
+
+    make_teacher.short_description = "Сделать выбранных преподавателями"
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user')
 
 
 @admin.register(PendingUser)

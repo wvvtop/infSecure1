@@ -5,6 +5,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import EmailValidator
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from datetime import timedelta, datetime
 
 from project1 import settings
 
@@ -64,6 +66,10 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+    class Meta:
+        verbose_name = "Профиль пользователя"
+        verbose_name_plural = "Профиль пользователя"
 
 
 class PendingUser(models.Model):
@@ -145,6 +151,14 @@ class Practice(models.Model):
         verbose_name_plural = "Практика"
         unique_together = ('teacher', 'date_of_lesson', 'time_of_lesson')
         ordering = ['date_of_lesson', 'time_of_lesson']
+
+    @property
+    def is_available(self):
+        """Доступен ли слот для записи (за 2+ часа до начала)"""
+        lesson_datetime = timezone.make_aware(
+            datetime.combine(self.date_of_lesson, self.time_of_lesson))
+        time_until_lesson = lesson_datetime - timezone.now()
+        return time_until_lesson > timedelta(hours=2)
 
     def __str__(self):
         return f"{self.teacher} – {self.date_of_lesson} {self.time_of_lesson}"

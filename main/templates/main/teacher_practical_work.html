@@ -132,7 +132,7 @@
                                 {% for practice in today_practices %}
                                     <tr>
                                         <td>{{ practice.time_of_lesson }}</td>
-                                        <td>{{ practice.student.profile.get_full_name }}</td>
+                                        <td>{{ practice.student.profile.first_name }} {{ practice.student.profile.last_name }}</td>
                                         <td>{{ practice.student.profile.phone_number }}</td>
                                     </tr>
                                 {% endfor %}
@@ -156,7 +156,7 @@
                                 {% for practice in practices %}
                                     <tr>
                                         <td>{{ practice.time_of_lesson }}</td>
-                                        <td>{{ practice.student.profile.get_full_name }}</td>
+                                        <td>{{ practice.student.profile.first_name }} {{ practice.student.profile.last_name }}</td>
                                         <td>{{ practice.student.profile.phone_number }}</td>
                                     </tr>
                                 {% endfor %}

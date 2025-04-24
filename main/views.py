@@ -1,4 +1,5 @@
 import secrets
+from collections import defaultdict, Counter
 from zoneinfo import ZoneInfo
 from django.db import IntegrityError
 import requests
@@ -15,14 +16,14 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .forms import ProfileEditForm
-from django.utils.timezone import now
+from django.utils.timezone import now, make_aware
 from axes.models import AccessAttempt
 from django.contrib.auth import get_backends
 from axes.handlers.proxy import AxesProxyHandler
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.db.models import Q
+from django.db.models import Q, Count
 
 
 def anonymous_required(view_function):
@@ -32,6 +33,13 @@ def anonymous_required(view_function):
         return view_function(request, *args, **kwargs)
     return wrapper
 
+
+def teacher_required(view_function):
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_teacher:
+            return redirect('home')
+        return view_function(request, *args, **kwargs)
+    return wrapper
 
 def home(request):
     return render(request, "main/home.html")
@@ -505,7 +513,7 @@ def password_reset_new_password(request):
     return render(request, 'main/password_reset_new_password.html')
 
 
-
+#Работа инструктора
 TIME_SLOTS = [
     ('08:30', '8:30'),
     ('10:15', '10:15'),
@@ -521,7 +529,7 @@ def send_cancellation_email(practice):
     subject = 'Отмена занятия по вождению'
     message = (
         f'Здравствуйте, {student.profile.first_name}!\n\n'
-        f'Ваше занятие с инструктором {practice.teacher.profile.get_full_name()} '
+        f'Ваше занятие с инструктором {practice.teacher.profile.first_name + " " + practice.teacher.profile.last_name} '
         f'на {practice.date_of_lesson.strftime("%d.%m.%Y")} в {practice.time_of_lesson} было отменено.\n\n'
         'Пожалуйста, выберите другое время или другого инструктора.\n\n'
         'С уважением,\n'
@@ -550,9 +558,10 @@ def get_russian_weekday(date_obj):
 
 
 @login_required(login_url="login")
+@teacher_required
 def teacher_practical_work(request):
-    if not request.user.is_teacher:
-        return redirect('home')
+    # if not request.user.is_teacher:
+    #     return redirect('home')
 
         # Активируем нужный часовой пояс
     tz = ZoneInfo(settings.TIME_ZONE)
@@ -692,6 +701,134 @@ def teacher_practical_work(request):
     }
 
     return render(request, 'main/teacher_practical_work.html', context)
+#Конец работы инструктора
 
+
+# tz = ZoneInfo(settings.TIME_ZONE)
+# timezone.activate(tz)
+# #Получаем текущее время с учетом часового пояса
+# _now = timezone.localtime(timezone.now())
+# today = _now.date()
+
+
+#Работа студента
+@login_required(login_url="login")
+def student_practical_lesson(request):
+    if not request.user.is_student:
+        return redirect("home")
+
+    # Установка часового пояса
+    tz = ZoneInfo(settings.TIME_ZONE)
+    timezone.activate(tz)
+    _now = timezone.localtime(timezone.now())
+    today = _now.date()
+    max_date = today + timedelta(days=4)
+
+    # Базовые данные (всегда получаем)
+    exams, _ = Exams.objects.get_or_create(user=request.user)
+    completed_tests = sum([exams.first_test, exams.second_test,
+                           exams.third_test, exams.fourth_test])
+
+    # Базовый контекст
+    context = {
+        'exams': exams,
+        'completed_tests': completed_tests,
+        'progress_width': completed_tests * 25,
+        'show_extra_functionality': completed_tests >= 3,
+        'today': today,
+        'now': _now,
+    }
+
+    # Если тестов меньше 3 - возвращаем сразу
+    if completed_tests < 3:
+        return render(request, "main/practicalLesson.html", context)
+
+    # Основная логика (только для 3+ тестов)
+    current_bookings = (
+        request.user.practice_student
+        .filter(date_of_lesson__gte=today)
+        .select_related('teacher', 'teacher__profile')
+        .order_by('date_of_lesson', 'time_of_lesson')
+    )
+
+    # Подготовка данных о записях
+    booked_slots = set()
+    bookings_per_day = defaultdict(int)
+
+    for booking in current_bookings:
+        slot_key = (booking.date_of_lesson, booking.time_of_lesson)
+        booked_slots.add(slot_key)
+        bookings_per_day[booking.date_of_lesson] += 1
+
+    full_days = {date for date, count in bookings_per_day.items() if count >= 2}
+
+    # Обработка POST-запросов
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        slot_id = request.POST.get('slot_id')
+
+        if action == 'cancel':
+            try:
+                slot = Practice.objects.get(id=slot_id, student=request.user)
+                lesson_datetime = timezone.make_aware(
+                    datetime.combine(slot.date_of_lesson, slot.time_of_lesson))
+
+                if (lesson_datetime - _now) > timedelta(hours=2):
+                    slot.student = None
+                    slot.save()
+                    messages.success(request, 'Запись успешно отменена!')
+                else:
+                    messages.error(request, 'Отмена возможна только за 2+ часа до занятия')
+            except Practice.DoesNotExist:
+                messages.error(request, 'Запись не найдена')
+
+            return redirect('student_practical_lesson')
+
+        elif not action:  # Новая запись
+            try:
+                slot = Practice.objects.get(id=slot_id, student__isnull=True)
+
+                if bookings_per_day.get(slot.date_of_lesson, 0) >= 2:
+                    messages.error(request, f'Лимит 2 занятий в день ({slot.date_of_lesson.strftime("%d.%m.%Y")})')
+                elif (slot.date_of_lesson, slot.time_of_lesson) in booked_slots:
+                    messages.error(request, 'Вы уже записаны на это время')
+                elif not slot.is_available:
+                    messages.error(request, 'Запись возможна только за 2+ часа до занятия')
+                else:
+                    slot.student = request.user
+                    slot.save()
+
+                return redirect('student_practical_lesson')
+            except Practice.DoesNotExist:
+                messages.error(request, 'Время уже занято')
+
+    # Получение доступных слотов
+    available_slots = (
+        Practice.objects
+        .filter(
+            student__isnull=True,
+            date_of_lesson__range=[today, max_date]
+        )
+        .exclude(date_of_lesson__in=full_days)
+        .select_related('teacher', 'teacher__profile')
+        .order_by('date_of_lesson', 'time_of_lesson')
+    )
+
+    # Фильтрация уже занятых слотов
+    available_slots = [
+        slot for slot in available_slots
+        if (slot.date_of_lesson, slot.time_of_lesson) not in booked_slots
+    ]
+
+    # Добавляем дополнительные данные в контекст
+    context.update({
+        'current_bookings': current_bookings,
+        'available_slots': available_slots,
+        'max_date': max_date,
+        'booked_slots': booked_slots,
+        'full_days': full_days,
+    })
+
+    return render(request, "main/practicalLesson.html", context)
 
 # Create your views here.

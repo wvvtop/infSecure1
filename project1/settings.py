@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 #host = "http://localhost:8000"
-host = "192.168.0.102"
+host = "192.168.122.51"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
