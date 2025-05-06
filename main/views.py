@@ -856,5 +856,5 @@ def create_admin_user(request):
         username="admin@mail.ru",
         password="qwerty1234"
     )
-    return HttpResponse("🎉 Админ создан: admin@example.com / AdminPassword123")
+    return HttpResponse("🎉 Админ создан: admin@mail.ru / qwerty1234")
 # Create your views here.
