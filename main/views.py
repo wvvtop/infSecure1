@@ -846,7 +846,7 @@ def student_practical_lesson(request):
 
 
 
-def create_temp_admin(request):
+def create_admin_user(request):
     User = get_user_model()
 
     if User.objects.filter(is_admin=True).exists():
