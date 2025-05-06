@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 #host = "http://localhost:8000"
-host = "*"
+host = "https://infsecure1.onrender.com"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -189,4 +189,7 @@ AXES_LOCKOUT_TEMPLATE = None  # Отключаем шаблон Axes
 AXES_LOCKOUT_URL = None  # Отключаем редирект
 AXES_LOCKOUT_CALLABLE = 'main.views.custom_lockout'  # Указываем свою функцию обработки блокировки
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://infsecure1.onrender.com',
+]
 
