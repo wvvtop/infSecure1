@@ -846,16 +846,15 @@ def student_practical_lesson(request):
 
 
 
-def create_admin_user(request):
+def create_temp_admin(request):
     User = get_user_model()
 
-    if User.objects.filter(is_superuser=True).exists():
-        return HttpResponse("Админ уже существует")
+    if User.objects.filter(is_admin=True).exists():
+        return HttpResponse("✅ Админ уже существует")
 
-    User.objects.create_superuser(
-        username='admin',
-        email='admin@mail.ru',
-        password='qwerty1234'
+    user = User.objects.create_superuser(
+        username="admin@mail.ru",
+        password="qwerty1234"
     )
-    return HttpResponse("Админ создан")
+    return HttpResponse("🎉 Админ создан: admin@example.com / AdminPassword123")
 # Create your views here.
