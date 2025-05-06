@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 #host = "http://localhost:8000"
-host = "https://infsecure1.onrender.com"
+host = "infsecure1.onrender.com"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -192,4 +192,8 @@ AXES_LOCKOUT_CALLABLE = 'main.views.custom_lockout'  # Указываем сво
 CSRF_TRUSTED_ORIGINS = [
     'https://infsecure1.onrender.com',
 ]
+
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
