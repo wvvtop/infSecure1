@@ -7,7 +7,6 @@ from django.core.validators import EmailValidator
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta, datetime
-
 from project1 import settings
 
 

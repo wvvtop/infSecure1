@@ -6,6 +6,8 @@ import requests
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.paginator import Paginator
+from django.http import JsonResponse
+
 from .models import PendingUser, CustomUser, PasswordResetCode, Exams, Practice
 from django.utils import timezone
 from datetime import timedelta, datetime, date, time
@@ -46,7 +48,17 @@ def home(request):
 
 
 def about(request):
-    return render(request, "main/about.html")
+    # Получаем всех активных пользователей с флагом is_teacher=True
+    instructors = CustomUser.objects.filter(
+        is_teacher=True,
+        is_active=True
+    ).select_related('profile')  # Используем select_related для оптимизации запросов
+
+    context = {
+        'instructors': instructors
+    }
+    return render(request, 'main/about.html', context)
+
 
 
 def courses(request):
@@ -67,11 +79,26 @@ def profile_view(request):
 
 
 @login_required(login_url="login")
+@teacher_required
 def teacher_theory_work(request):
-    if not request.user.is_teacher:
-        return redirect("home")
+    if request.method == 'POST':
+        student_id = request.POST.get('student_id')
+        exam_field = request.POST.get('exam_field')
+        value = request.POST.get('value') == '1'
 
-    # Поиск студентов
+        if student_id and exam_field:
+            try:
+                student = CustomUser.objects.get(id=student_id)
+                exam, created = Exams.objects.get_or_create(user=student)
+                setattr(exam, exam_field, value)
+                exam.save()
+                return JsonResponse({'success': True})
+            except CustomUser.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Студент не найден'})
+        else:
+            return JsonResponse({'success': False, 'error': 'Неверные данные'})
+
+    # GET-запрос — обычный рендер страницы
     search_query = request.GET.get('search', '')
     students_list = CustomUser.objects.filter(is_student=True) \
         .select_related('profile', 'exams') \
@@ -84,22 +111,9 @@ def teacher_theory_work(request):
             Q(username__icontains=search_query)
         )
 
-    # Пагинация по 20 пользователей
     paginator = Paginator(students_list, 20)
     page_number = request.GET.get('page')
     students = paginator.get_page(page_number)
-
-    # Обработка формы
-    if request.method == 'POST':
-        student_id = request.POST.get('student_id')
-        exam_field = request.POST.get('exam_field')
-        value = request.POST.get('value') == '1'
-
-        if student_id and exam_field:
-            student = CustomUser.objects.get(id=student_id)
-            exam, created = Exams.objects.get_or_create(user=student)
-            setattr(exam, exam_field, value)
-            exam.save()
 
     context = {
         'students': students,
@@ -613,7 +627,6 @@ def teacher_practical_work(request):
                     send_cancellation_email(practice)
                 practice.delete()  # Удаляем занятие
 
-        messages.success(request, 'Расписание обновлено!')
         return redirect(request.get_full_path())
 
     # Обработка GET-запроса

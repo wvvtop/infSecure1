@@ -142,7 +142,7 @@
     <script>
         // Обёртка вокруг вызова из шаблона (передаёт CSRF токен)
         function callUpdateExam(checkbox, studentId, fieldName) {
-            updateExam(checkbox, studentId, fieldName, '{{ csrf_token }}');
+            updateExam(checkbox, studentId, fieldName, '{{ csrf_token|escapejs }}');
         }
     </script>
 {% endblock %}
