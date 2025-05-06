@@ -10,11 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import json
+import os
 from pathlib import Path
-
+from urllib.parse import urlparse
 
 #host = "http://localhost:8000"
-host = "192.168.122.51"
+host = "*"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -79,24 +80,32 @@ WSGI_APPLICATION = 'project1.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'driving_school',
-        'USER': 'driving_school_admin',
-        'PASSWORD': 'admin1234',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    },
-    'school_user': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'driving_school',
-        'USER': 'driving_school_user',
-        'PASSWORD': 'qwerty1234',
-        'HOST': 'localhost',
-        'PORT': '5432',
+# Если есть DATABASE_URL (например, на Render)
+if os.environ.get('DATABASE_URL'):
+    db_info = urlparse(os.environ.get('DATABASE_URL'))
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': db_info.path[1:],  # Убираем первый слэш
+            'USER': db_info.username,
+            'PASSWORD': db_info.password,
+            'HOST': db_info.hostname,
+            'PORT': db_info.port,
+            'OPTIONS': {'sslmode': 'require'},  # SSL для безопасности
+        }
     }
-}
+else:
+    # Локальная разработка (если нет DATABASE_URL)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'driving_school',
+            'USER': 'driving_school_admin',
+            'PASSWORD': 'qwerty1234',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
