@@ -6,14 +6,14 @@ import requests
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 
 from .models import PendingUser, CustomUser, PasswordResetCode, Exams, Practice
 from django.utils import timezone
 from datetime import timedelta, datetime, date, time
 from .forms import CustomUserCreationForm
 from .models import UserProfile
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, get_user_model
 from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -844,4 +844,18 @@ def student_practical_lesson(request):
 
     return render(request, "main/practicalLesson.html", context)
 
+
+
+def create_admin_user(request):
+    User = get_user_model()
+
+    if User.objects.filter(is_superuser=True).exists():
+        return HttpResponse("Админ уже существует")
+
+    User.objects.create_superuser(
+        username='admin',
+        email='admin@mail.ru',
+        password='qwerty1234'
+    )
+    return HttpResponse("Админ создан")
 # Create your views here.

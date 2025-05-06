@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 #host = "http://localhost:8000"
-host = "infsecure1.onrender.com"
+host = "https://infsecure1.onrender.com"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
