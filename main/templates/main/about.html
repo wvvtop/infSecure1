@@ -2,8 +2,8 @@
 {% load static %}
 
 {% block title %}О нас - Автошкола Онлайн{% endblock %}
-
-
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'main/js/about.js' %}"></script>
 {% block content %}
     <link rel="stylesheet" href="{% static 'main/css/about.css' %}">
     <div class="about-page">
@@ -26,32 +26,14 @@
                 </ul>
             </div>
 
-
             <div class="about-section">
                 <h2>Наши инструкторы</h2>
 
-                <div class="instructors-grid">
-                    {% for instructor in instructors %}
-                        <div class="instructor-card">
-                            <div class="instructor-img">
-                                {% if instructor.profile.photo %}
-                                    <img src="{{ instructor.profile.photo.url }}"
-                                         alt="{{ instructor.profile.get_full_name }}">
-                                {% else %}
-                                    <div class="default-avatar">
-                                        {{ instructor.profile.first_name|first }}{{ instructor.profile.last_name|first }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="instructor-info">
-                                <h3>{{ instructor.profile.first_name }} {{ instructor.profile.last_name }}</h3>
-                                <p>Телефон: {{ instructor.profile.phone_number }}</p>
-                                <!-- Можно добавить дополнительные поля при необходимости -->
-                            </div>
-                        </div>
-                    {% endfor %}
+                <div id="instructors-container" class="instructors-grid">
+                    <!-- Инструкторы загружаются через AJAX -->
                 </div>
             </div>
         </div>
     </div>
+
 {% endblock %}

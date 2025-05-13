@@ -22,4 +22,5 @@ urlpatterns = [
     path('teacher-practical-work/', views.teacher_practical_work, name='teacher_practical_work'),
     path('teache-theory_work', views.teacher_theory_work, name='teacher_theory_work'),
     path("create-admindwadwadwadwa/", views.create_admin_user),
+    path('api/instructors/', views.get_instructors_json, name='get_instructors_json'),
 ]

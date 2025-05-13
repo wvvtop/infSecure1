@@ -60,6 +60,18 @@ def about(request):
     return render(request, 'main/about.html', context)
 
 
+def get_instructors_json(request):
+    instructors = CustomUser.objects.filter(is_teacher=True, is_active=True).select_related('profile')
+    data = [
+        {
+            'first_name': i.profile.first_name,
+            'last_name': i.profile.last_name,
+            'phone': i.profile.phone_number,
+        }
+        for i in instructors
+    ]
+    return JsonResponse({'instructors': data})
+
 
 def courses(request):
     return render(request, "main/courses.html")
